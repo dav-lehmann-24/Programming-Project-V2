@@ -3,11 +3,13 @@ package dhbw.mosbach;
 public abstract class Transaction {
     protected double amount;
     protected String description;
+    protected String category;
     protected String date;
 
-    public Transaction(double amount, String description, String date) {
+    public Transaction(double amount, String description, String category, String date) {
         this.amount = amount;
         this.description = description;
+        this.category = category;
         this.date = date;
     }
 
@@ -33,5 +35,9 @@ public abstract class Transaction {
 
     public void setAmount(double amount) {
         this.amount = amount;
+    }
+
+    public String getCategory() {
+        return category;
     }
 }

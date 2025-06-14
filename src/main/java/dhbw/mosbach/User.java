@@ -11,18 +11,12 @@ public class User {
     // Attributes of a user
     String name;
     private String passwordHash;
-    double startingBalance;
-    double currentBalance;
-    double savingGoal;
-    Map<String, MonthData> monthDataMap;
-    String currentMonth;
+    private Map<String, MonthData> monthDataMap;
+    private String currentMonth;
 
     // Constructor of a user
-    public User(String name, double startingBalance, String plainPassword) {
+    public User(String name, String plainPassword) {
         this.name = name;
-        this.startingBalance = startingBalance;
-        this.currentBalance = startingBalance;
-        this.savingGoal = 0;
         this.passwordHash = BCrypt.withDefaults().hashToString(12, plainPassword.toCharArray());
         this.monthDataMap = new HashMap<>();
         this.currentMonth = null;
@@ -30,21 +24,29 @@ public class User {
 
     // Adds an expense and subtracts it from the current balance
     public void addExpense(String category, double amount, String description, String date) {
-        if (currentMonth == null) return;
-        monthDataMap.get(currentMonth).addExpense(new Expense(amount, description, category, date));
-        currentBalance -= amount;
+        MonthData data = getCurrentMonthData();
+        if (data != null) {
+            data.addExpense(new Expense(amount, description, category, date));
+            data.setCurrentBalance(data.getCurrentBalance() - amount);
+        }
     }
 
     // Sets a saving goal for a user
     public void setSavingGoal(double goal) {
-        this.savingGoal = goal;
+        getCurrentMonthData().setSavingGoal(goal);
     }
 
     // Removes an expense according to the description if there is any
     public boolean removeExpense(String description) {
         MonthData data = getCurrentMonthData();
         if (data != null) {
-            return data.getExpenses().removeIf(expense -> expense.getDescription().equals(description));
+            for (Expense e : new ArrayList<>(data.getExpenses())) {
+                if (e.getDescription().equalsIgnoreCase(description)) {
+                    data.getExpenses().remove(e);
+                    data.setCurrentBalance(data.getCurrentBalance() + e.getAmount());
+                    return true;
+                }
+            }
         }
         return false;
     }
@@ -65,12 +67,15 @@ public class User {
 
     // Setting the current balance
     public void setCurrentBalance(double currentBalance) {
-        this.currentBalance = currentBalance;
+        MonthData data = getCurrentMonthData();
+        if (data != null) {
+            data.setCurrentBalance(currentBalance);
+        }
     }
 
     // Returns the current balance
     public double getCurrentBalance() {
-        return currentBalance;
+        return getCurrentMonthData().getCurrentBalance();
     }
 
     // Calculate the sum of all expenses of the user
@@ -93,16 +98,24 @@ public class User {
 
     // Adds an income and adds it to the current balance
     public void addIncome(String category, double amount, String description, String date) {
-        if (currentMonth == null) return;
-        monthDataMap.get(currentMonth).addIncome(new Income(amount, description, category, date));
-        currentBalance += amount;
+        MonthData data = getCurrentMonthData();
+        if (data != null) {
+            data.addIncome(new Income(amount, description, category, date));
+            data.setCurrentBalance(data.getCurrentBalance() + amount);
+        }
     }
 
     // Removes an income according to the description if there is any
     public boolean removeIncome(String description) {
         MonthData data = getCurrentMonthData();
         if (data != null) {
-            return data.getIncomes().removeIf(income -> income.getDescription().equalsIgnoreCase(description));
+            for (Income i : new ArrayList<>(data.getIncomes())) {
+                if (i.getDescription().equalsIgnoreCase(description)) {
+                    data.getIncomes().remove(i);
+                    data.setCurrentBalance(data.getCurrentBalance() - i.getAmount());
+                    return true;
+                }
+            }
         }
         return false;
     }
@@ -121,16 +134,31 @@ public class User {
         return BCrypt.verifyer().verify(inputPassword.toCharArray(), passwordHash).verified;
     }
 
-    public void selectMonth(String monthName) {
+    public void selectMonth(String monthName, double startingBalance, String currency, double savingGoal) {
         this.currentMonth = monthName;
-        monthDataMap.putIfAbsent(monthName, new MonthData(monthName));
+        monthDataMap.putIfAbsent(monthName, new MonthData(monthName, startingBalance, currency, savingGoal));
     }
 
     public MonthData getCurrentMonthData() {
         return currentMonth != null ? monthDataMap.get(currentMonth) : null;
     }
 
+    public String getCurrency() {
+        MonthData data = getCurrentMonthData();
+        return (data != null) ? data.getCurrency() : "";
+    }
+
     public String getCurrentMonth() {
         return currentMonth;
+    }
+
+    public Map<String, MonthData> getMonthDataMap() {
+        return monthDataMap;
+    }
+
+    public void selectMonth(String monthName) {
+        if (monthDataMap.containsKey(monthName)) {
+            this.currentMonth = monthName;
+        }
     }
 }

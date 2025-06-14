@@ -28,7 +28,8 @@ public class UserLogic {
     private Map<String, User> loadUsers() {
         try (FileReader reader = new FileReader(FILE_PATH)) {
             Type type = new TypeToken<Map<String, User>>() {}.getType();
-            return gson.fromJson(reader, type);
+            Map<String, User> loadedUsers = gson.fromJson(reader, type);
+            return (loadedUsers != null) ? loadedUsers : new HashMap<>();
         } catch (IOException e) {
             return new HashMap<>();
         }
@@ -44,9 +45,9 @@ public class UserLogic {
     }
 
     // Adds a new user if he doesn't already exist
-    public void addUser(String name, double startingBalance, String password) {
+    public void addUser(String name, String password) {
         if (!users.containsKey(name)) {
-            users.put(name, new User(name, startingBalance, password));
+            users.put(name, new User(name, password));
             saveUsers();
         }
     }
