@@ -72,8 +72,11 @@ public class MainFX extends Application {
         Button btnSetGoal = new Button("Set Goal");
         btnSetGoal.setOnAction(e -> setGoal());
 
-        Button btnShowPieCharts = new Button("Show Pie Charts");
-        btnShowPieCharts.setOnAction(e -> showPieChart());
+        Button btnShowIncomeChart = new Button("Show Income Chart");
+        btnShowIncomeChart.setOnAction(e -> showIncomeChart());
+
+        Button btnShowExpenseChart = new Button("Show Expense Chart");
+        btnShowExpenseChart.setOnAction(e -> showExpenseChart());
 
         Button btnSelectUser = new Button("Select User");
         btnSelectUser.setOnAction(e -> selectUser());
@@ -96,7 +99,8 @@ public class MainFX extends Application {
                 btnDeleteIncome,
                 btnDeleteExpense,
                 btnSetGoal,
-                btnShowPieCharts
+                btnShowIncomeChart,
+                btnShowExpenseChart
         );
         userPanel.setVisible(false);
 
@@ -107,56 +111,19 @@ public class MainFX extends Application {
                 userPanel
         );
 
-        Scene scene = new Scene(root, 800, 600);
+        Scene scene = new Scene(root, 1000, 800);
         primaryStage.setScene(scene);
         primaryStage.show();
     }
 
     private void createUser() {
-        Dialog<String[]> dialog = new Dialog<>();
-        dialog.setTitle("Create User");
-        dialog.setHeaderText("Enter username and password:");
-
-        Label lblUsername = new Label("Username:");
-        TextField txtUsername = new TextField();
-        Label lblPassword = new Label("Password:");
-        PasswordField txtPassword = new PasswordField();
-        Label lblConfirm = new Label("Confirm Password:");
-        PasswordField txtConfirm = new PasswordField();
-
-        GridPane grid = new GridPane();
-        grid.setHgap(10);
-        grid.setVgap(10);
-        grid.setPadding(new Insets(20, 150, 10, 10));
-        grid.add(lblUsername, 0, 0);
-        grid.add(txtUsername, 1, 0);
-        grid.add(lblPassword, 0, 1);
-        grid.add(txtPassword, 1, 1);
-        grid.add(lblConfirm, 0, 2);
-        grid.add(txtConfirm, 1, 2);
-
-        dialog.getDialogPane().setContent(grid);
-        ButtonType createButtonType = new ButtonType("Create", ButtonBar.ButtonData.OK_DONE);
-        dialog.getDialogPane().getButtonTypes().addAll(createButtonType, ButtonType.CANCEL);
-
-        dialog.setResultConverter(button -> {
-            if (button == createButtonType) {
-                return new String[] {
-                        txtUsername.getText(),
-                        txtPassword.getText(),
-                        txtConfirm.getText()
-                };
-            }
-            return null;
-        });
-
-        dialog.showAndWait().ifPresent(result -> {
+        DialogHelper.showUserCreationDialog().ifPresent(result -> {
             String username = result[0];
             String password = result[1];
             String confirmPassword = result[2];
 
             if (!password.equals(confirmPassword)) {
-                showAlert("Password Mismatch", "Passwords do not match.");
+                UIUtils.showAlert("Password Mismatch", "Passwords do not match.");
             }
             else {
                 logic.addUser(username, password);
@@ -168,47 +135,15 @@ public class MainFX extends Application {
     }
 
     private void selectUser() {
-        Dialog<String[]> dialog = new Dialog<>();
-        dialog.setTitle("Login");
-        dialog.setHeaderText("Enter username and password:");
-
-        Label lblUsername = new Label("Username:");
-        TextField txtUsername = new TextField();
-        Label lblPassword = new Label("Password:");
-        PasswordField txtPassword = new PasswordField();
-
-        GridPane grid = new GridPane();
-        grid.setHgap(10);
-        grid.setVgap(10);
-        grid.setPadding(new Insets(20, 150, 10, 10));
-        grid.add(lblUsername, 0, 0);
-        grid.add(txtUsername, 1, 0);
-        grid.add(lblPassword, 0, 1);
-        grid.add(txtPassword, 1, 1);
-
-        dialog.getDialogPane().setContent(grid);
-        ButtonType loginButtonType = new ButtonType("Login", ButtonBar.ButtonData.OK_DONE);
-        dialog.getDialogPane().getButtonTypes().addAll(loginButtonType, ButtonType.CANCEL);
-
-        dialog.setResultConverter(button -> {
-            if (button == loginButtonType) {
-                return new String[] {
-                        txtUsername.getText(),
-                        txtPassword.getText()
-                };
-            }
-            return null;
-        });
-
-        dialog.showAndWait().ifPresent(result -> {
+        DialogHelper.showLoginDialog().ifPresent(result -> {
             String username = result[0];
             String password = result[1];
             User user = logic.getUser(username);
             if (user == null) {
-                showAlert("User Not Found", "No user found with that name.");
+                UIUtils.showAlert("User Not Found", "No user found with that name.");
             }
             else if (!user.checkPassword(password)) {
-                showAlert("Invalid Password", "Password is incorrect.");
+                UIUtils.showAlert("Invalid Password", "Password is incorrect.");
             }
             else {
                 currentUser = user;
@@ -219,44 +154,7 @@ public class MainFX extends Application {
     }
 
     private void createMonthDialog() {
-        Dialog<String[]> dialog = new Dialog<>();
-        dialog.setTitle("Create New Month");
-        dialog.setHeaderText("Enter month name, starting balance, currency, and optional saving goal:");
-
-        Label lblMonth = new Label("Month (e.g., July 2025):");
-        TextField txtMonth = new TextField();
-        Label lblBalance = new Label("Starting Balance:");
-        TextField txtBalance = new TextField();
-        Label lblCurrency = new Label("Currency (e.g., €):");
-        TextField txtCurrency = new TextField();
-        Label lblGoal = new Label("Saving Goal (optional):");
-        TextField txtGoal = new TextField();
-
-        GridPane grid = new GridPane();
-        grid.setHgap(10);
-        grid.setVgap(10);
-        grid.setPadding(new Insets(20));
-        grid.add(lblMonth, 0, 0); grid.add(txtMonth, 1, 0);
-        grid.add(lblBalance, 0, 1); grid.add(txtBalance, 1, 1);
-        grid.add(lblCurrency, 0, 2); grid.add(txtCurrency, 1, 2);
-        grid.add(lblGoal, 0, 3); grid.add(txtGoal, 1, 3);
-
-        dialog.getDialogPane().setContent(grid);
-        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
-
-        dialog.setResultConverter(button -> {
-            if (button == ButtonType.OK) {
-                return new String[] {
-                        txtMonth.getText(),
-                        txtBalance.getText(),
-                        txtCurrency.getText(),
-                        txtGoal.getText()
-                };
-            }
-            return null;
-        });
-
-        dialog.showAndWait().ifPresent(data -> {
+        DialogHelper.showMonthCreationDialog().ifPresent(data -> {
             try {
                 String month = data[0].trim();
                 double balance = Double.parseDouble(data[1].trim());
@@ -270,89 +168,43 @@ public class MainFX extends Application {
                 lblWelcomeMessage.setText("Welcome back, " + currentUser.getName() + "!");
                 userPanel.setVisible(true);
                 updateLabels();
-            } catch (Exception e) {
-                showAlert("Invalid Input", "Please enter valid numbers for balance and goal.");
+            }
+            catch (Exception e) {
+                UIUtils.showAlert("Invalid Input", "Please enter valid numbers for balance and goal.");
                 createMonthDialog(); // Retry
             }
         });
     }
 
     private void selectOrCreateMonth() {
-        Dialog<ButtonType> choiceDialog = new Dialog<>();
-        choiceDialog.setTitle("Month Planning");
-        choiceDialog.setHeaderText("Would you like to select an existing month or create a new one?");
-        ButtonType btnSelect = new ButtonType("Select Existing", ButtonBar.ButtonData.YES);
-        ButtonType btnCreate = new ButtonType("Create New", ButtonBar.ButtonData.NO);
-        choiceDialog.getDialogPane().getButtonTypes().addAll(btnSelect, btnCreate, ButtonType.CANCEL);
-
-        choiceDialog.setResultConverter(button -> button);
-
-        Optional<ButtonType> result = choiceDialog.showAndWait();
+        Optional<ButtonType> result = DialogHelper.showMonthSelectionModeDialog();
 
         if (result.isPresent()) {
-            if (result.get() == btnSelect) {
-                // --- SELECT EXISTING ---
+            ButtonType selected = result.get();
+
+            if (selected.getButtonData() == ButtonBar.ButtonData.YES) {
+                // For selecting an existing month
                 List<String> existingMonths = new ArrayList<>(currentUser.getMonthDataMap().keySet());
 
                 if (existingMonths.isEmpty()) {
-                    showAlert("No Months Found", "No existing months available. Please create one.");
+                    UIUtils.showAlert("No Months Found", "No existing months available. Please create one.");
                     selectOrCreateMonth();
                     return;
                 }
 
-                ChoiceDialog<String> monthChoice = new ChoiceDialog<>(existingMonths.get(0), existingMonths);
-                monthChoice.setTitle("Select Month");
-                monthChoice.setHeaderText("Choose a month to continue planning:");
-                monthChoice.setContentText("Months:");
-
-                monthChoice.showAndWait().ifPresent(month -> {
-                    currentUser.selectMonth(month);
-                    lblCurrentMonth.setText("Planning for: " + month);
-                    lblWelcomeMessage.setText("Welcome back, " + currentUser.getName() + "!");
-                    updateLabels();
-                });
+                DialogHelper.showChoiceDialog("Select Month", "Choose a month to continue planning:", "Months:", existingMonths)
+                        .ifPresent(selectedMonth -> {
+                            currentUser.selectMonth(selectedMonth);
+                            logic.saveUsers();
+                            lblCurrentMonth.setText("Planning for: " + selectedMonth);
+                            lblWelcomeMessage.setText("Welcome back, " + currentUser.getName() + "!");
+                            updateLabels();
+                        });
 
             }
-            else if (result.get() == btnCreate) {
-                // --- CREATE NEW ---
-                Dialog<String[]> dialog = new Dialog<>();
-                dialog.setTitle("Create New Month");
-                dialog.setHeaderText("Enter month name, starting balance, currency, and optional saving goal:");
-
-                Label lblMonth = new Label("Month (e.g., April 2025):");
-                TextField txtMonth = new TextField();
-                Label lblBalance = new Label("Starting Balance:");
-                TextField txtBalance = new TextField();
-                Label lblCurrency = new Label("Currency (e.g., €):");
-                TextField txtCurrency = new TextField();
-                Label lblGoal = new Label("Saving Goal (optional):");
-                TextField txtGoal = new TextField();
-
-                GridPane grid = new GridPane();
-                grid.setHgap(10);
-                grid.setVgap(10);
-                grid.setPadding(new Insets(20));
-                grid.add(lblMonth, 0, 0); grid.add(txtMonth, 1, 0);
-                grid.add(lblBalance, 0, 1); grid.add(txtBalance, 1, 1);
-                grid.add(lblCurrency, 0, 2); grid.add(txtCurrency, 1, 2);
-                grid.add(lblGoal, 0, 3); grid.add(txtGoal, 1, 3);
-
-                dialog.getDialogPane().setContent(grid);
-                dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
-
-                dialog.setResultConverter(button -> {
-                    if (button == ButtonType.OK) {
-                        return new String[] {
-                                txtMonth.getText(),
-                                txtBalance.getText(),
-                                txtCurrency.getText(),
-                                txtGoal.getText()
-                        };
-                    }
-                    return null;
-                });
-
-                dialog.showAndWait().ifPresent(data -> {
+            else if (selected.getButtonData() == ButtonBar.ButtonData.NO) {
+                // For creating a new month
+                DialogHelper.showMonthCreationDialog().ifPresent(data -> {
                     try {
                         String month = data[0].trim();
                         double balance = Double.parseDouble(data[1].trim());
@@ -364,9 +216,8 @@ public class MainFX extends Application {
                         lblCurrentMonth.setText("Planning for: " + month);
                         lblWelcomeMessage.setText("Welcome back, " + currentUser.getName() + "!");
                         updateLabels();
-                    }
-                    catch (Exception e) {
-                        showAlert("Invalid Input", "Please enter valid numbers for balance and goal.");
+                    } catch (Exception e) {
+                        UIUtils.showAlert("Invalid Input", "Please enter valid numbers for balance and goal.");
                     }
                 });
             }
@@ -435,7 +286,7 @@ public class MainFX extends Application {
                 logic.saveUsers();
                 updateLabels();
             } catch (NumberFormatException e) {
-                showAlert("Invalid Input", "Please enter a valid number for the amount.");
+                UIUtils.showAlert("Invalid Input", "Please enter a valid number for the amount.");
             }
         });
     }
@@ -497,7 +348,7 @@ public class MainFX extends Application {
                 updateLabels();
             }
             catch (NumberFormatException e) {
-                showAlert("Invalid Input", "Please enter a valid number for the amount.");
+                UIUtils.showAlert("Invalid Input", "Please enter a valid number for the amount.");
             }
         });
     }
@@ -507,7 +358,7 @@ public class MainFX extends Application {
 
         List<Income> incomes = currentUser.getIncomes();
         if (incomes.isEmpty()) {
-            showAlert("No Incomes", "There are no incomes to delete.");
+            UIUtils.showAlert("No Incomes", "There are no incomes to delete.");
             return;
         }
 
@@ -523,12 +374,12 @@ public class MainFX extends Application {
         dialog.showAndWait().ifPresent(selectedDesc -> {
             boolean removed = currentUser.removeIncome(selectedDesc);
             if (removed) {
-                showAlert("Success", "Income removed successfully.");
+                UIUtils.showAlert("Success", "Income removed successfully.");
                 logic.saveUsers();
                 updateLabels();
             }
             else {
-                showAlert("Not Found", "Could not find matching income.");
+                UIUtils.showAlert("Not Found", "Could not find matching income.");
             }
         });
     }
@@ -538,7 +389,7 @@ public class MainFX extends Application {
 
         List<Expense> expenses = currentUser.getExpenses();
         if (expenses.isEmpty()) {
-            showAlert("No Expenses", "There are no expenses to delete.");
+            UIUtils.showAlert("No Expenses", "There are no expenses to delete.");
             return;
         }
 
@@ -554,12 +405,12 @@ public class MainFX extends Application {
         dialog.showAndWait().ifPresent(selectedDesc -> {
             boolean removed = currentUser.removeExpense(selectedDesc);
             if (removed) {
-                showAlert("Success", "Expense removed successfully.");
+                UIUtils.showAlert("Success", "Expense removed successfully.");
                 logic.saveUsers();
                 updateLabels();
             }
             else {
-                showAlert("Not Found", "Could not find matching expense.");
+                UIUtils.showAlert("Not Found", "Could not find matching expense.");
             }
         });
     }
@@ -603,24 +454,28 @@ public class MainFX extends Application {
         alert.showAndWait();
     }
 
-    private void showPieChart() {
-        if (currentUser == null || currentUser.getExpenses().isEmpty()) return;
-        Stage chartStage = new Stage();
-        chartStage.setTitle("Expense Breakdown");
+    private void showIncomeChart() {
+        if (currentUser == null) return;
+        MonthData data = currentUser.getCurrentMonthData();
+        if (data == null || data.getIncomes().isEmpty()) {
+            UIUtils.showAlert("No Incomes", "No incomes available for this month.");
+            return;
+        }
 
-        PieChart pieChart = new PieChart();
-        double total = currentUser.getTotalExpenses();
-        currentUser.getExpenses().stream()
-                .collect(java.util.stream.Collectors.groupingBy(Expense::getCategory, java.util.stream.Collectors.summingDouble(Expense::getAmount)))
-                .forEach((category, sum) -> {
-                    double percent = (sum / total) * 100;
-                    pieChart.getData().add(new PieChart.Data(category + String.format(" (%.2f%%)", percent), sum));
-                });
+        PieChart chart = PieChartGenerator.generateIncomeChart(data);
+        showChartInWindow(chart, "Income Distribution");
+    }
 
-        VBox vbox = new VBox(pieChart);
-        Scene scene = new Scene(vbox, 500, 400);
-        chartStage.setScene(scene);
-        chartStage.show();
+    private void showExpenseChart() {
+        if (currentUser == null) return;
+        MonthData data = currentUser.getCurrentMonthData();
+        if (data == null || data.getExpenses().isEmpty()) {
+            UIUtils.showAlert("No Expenses", "No expenses available for this month.");
+            return;
+        }
+
+        PieChart chart = PieChartGenerator.generateExpenseChart(data);
+        showChartInWindow(chart, "Expense Distribution");
     }
 
     private void updateLabels() {
@@ -632,22 +487,21 @@ public class MainFX extends Application {
         double currentBalance = data.getCurrentBalance();
         double savingGoal = data.getSavingGoal();
 
-        lblStartingBalance.setText("Starting balance: " + formatCurrency(startingBalance, currency));
-        lblCurrentBalance.setText("Current balance: " + formatCurrency(currentBalance, currency));
-        lblSavingGoal.setText("Saving goal: " + formatCurrency(savingGoal, currency));
+        lblStartingBalance.setText("Starting balance: " + UIUtils.formatCurrency(startingBalance, currency));
+        lblCurrentBalance.setText("Current balance: " + UIUtils.formatCurrency(currentBalance, currency));
+        lblSavingGoal.setText("Saving goal: " + UIUtils.formatCurrency(savingGoal, currency));
         double remainingBalance = Math.max(0, currentBalance - savingGoal);
-        lblMoneyRemaining.setText("Money remaining: " + formatCurrency(remainingBalance, currency));
+        lblMoneyRemaining.setText("Money remaining: " + UIUtils.formatCurrency(remainingBalance, currency));
     }
 
-    private String formatCurrency(double amount, String currency) {
-        return String.format("%.2f%s", amount, currency);
-    }
+    private void showChartInWindow(PieChart chart, String title) {
+        Stage chartStage = new Stage();
+        chartStage.setTitle(title);
 
-    private void showAlert(String title, String message) {
-        Alert alert = new Alert(Alert.AlertType.ERROR);
-        alert.setTitle(title);
-        alert.setHeaderText(null);
-        alert.setContentText(message);
-        alert.showAndWait();
+        VBox vbox = new VBox(chart);
+        vbox.setPadding(new Insets(10));
+        Scene scene = new Scene(vbox, 500, 400);
+        chartStage.setScene(scene);
+        chartStage.show();
     }
 }
