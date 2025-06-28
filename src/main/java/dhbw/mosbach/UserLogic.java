@@ -3,8 +3,6 @@ package dhbw.mosbach;
 // Import libraries
 import java.util.Map;
 import java.util.HashMap;
-import java.util.List;
-import java.util.ArrayList;
 import java.lang.reflect.Type;
 import java.io.IOException;
 import java.io.FileWriter;
@@ -30,7 +28,8 @@ public class UserLogic {
             Type type = new TypeToken<Map<String, User>>() {}.getType();
             Map<String, User> loadedUsers = gson.fromJson(reader, type);
             return (loadedUsers != null) ? loadedUsers : new HashMap<>();
-        } catch (IOException e) {
+        }
+        catch (IOException e) {
             return new HashMap<>();
         }
     }
@@ -39,7 +38,8 @@ public class UserLogic {
     public void saveUsers() {
         try (FileWriter writer = new FileWriter(FILE_PATH)) {
             gson.toJson(users, writer);
-        } catch (IOException e) {
+        }
+        catch (IOException e) {
             e.printStackTrace();
         }
     }
@@ -52,34 +52,9 @@ public class UserLogic {
         }
     }
 
-    // Adds an expense to a user
-    public boolean addExpenseToUser(User user, String category, double amount, String description) {
-        if (user != null) {
-            String date = java.time.LocalDate.now().toString();
-            user.addExpense(category, amount, description, date);
-            saveUsers();
-            return true;
-        }
-        return false;
-    }
-
-    // Sets a saving goal of a user
-    public void setUserSavingGoal(String name, double goalAmount) {
-        User user = users.get(name);
-        if (user != null) {
-            user.setSavingGoal(goalAmount);
-            saveUsers();
-        }
-    }
-
     // Return the user according to the name
     public User getUser(String name) {
         return users.get(name);
-    }
-
-    // Return a list of all users that exist
-    public List<String> getAllUserNames() {
-        return new ArrayList<>(users.keySet());
     }
 
     // Deletes a user of the map and saves the change
@@ -88,53 +63,6 @@ public class UserLogic {
             users.remove(name);
             saveUsers();
             return true;
-        }
-        return false;
-    }
-
-    // Deletes an expense from a user according to the description and adds the amount back to the user
-    public boolean deleteExpenseFromUser(String userName, String description) {
-        User user = users.get(userName);
-        if (user != null) {
-            List<Expense> expenses = user.getExpenses();
-            for (int i = 0; i < expenses.size(); i++) {
-                Expense exp = expenses.get(i);
-                if (exp.getDescription().equals(description)) {
-                    user.setCurrentBalance(user.getCurrentBalance() + exp.getAmount());
-                    expenses.remove(i);
-                    saveUsers();
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    // Adds an income to a user
-    public boolean addIncomeToUser(User user, String category, double amount, String description) {
-        if (user != null) {
-            String date = java.time.LocalDate.now().toString();
-            user.addIncome(category, amount, description, date);
-            saveUsers();
-            return true;
-        }
-        return false;
-    }
-
-    // Deletes an income from a user according to the description and subtracts the amount from the user
-    public boolean deleteIncomeFromUser(String userName, String description) {
-        User user = users.get(userName);
-        if (user != null) {
-            List<Income> incomes = user.getIncomes();
-            for (int i = 0; i < incomes.size(); i++) {
-                Income inc = incomes.get(i);
-                if (inc.getDescription().equals(description)) {
-                    user.setCurrentBalance(user.getCurrentBalance() - inc.getAmount());
-                    incomes.remove(i);
-                    saveUsers();
-                    return true;
-                }
-            }
         }
         return false;
     }

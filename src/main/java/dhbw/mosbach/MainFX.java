@@ -7,7 +7,6 @@ import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.stage.Stage;
 import javafx.geometry.Insets;
-import javafx.scene.chart.PieChart;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Optional;
@@ -22,6 +21,7 @@ public class MainFX extends Application {
     private Label lblSavingGoal;
     private Label lblStartingBalance;
     private Label lblMoneyRemaining;
+    private MainController mainController;
 
     public static void main(String[] args) {
         launch(args);
@@ -30,6 +30,7 @@ public class MainFX extends Application {
     @Override
     public void start(Stage primaryStage) {
         logic = new UserLogic();
+        mainController = new MainController(logic, this);
 
         primaryStage.setTitle("CashCompass");
 
@@ -52,31 +53,28 @@ public class MainFX extends Application {
         lblMoneyRemaining = new Label("Money remaining: -");
 
         Button btnAddIncome = new Button("Add Income");
-        btnAddIncome.setOnAction(e -> addIncome());
+        btnAddIncome.setOnAction(e -> mainController.addIncome(this::updateLabels));
 
         Button btnAddExpense = new Button("Add Expense");
-        btnAddExpense.setOnAction(e -> addExpense());
+        btnAddExpense.setOnAction(e -> mainController.addExpense(this::updateLabels));
 
         Button btnShowIncomes = new Button("Show Incomes");
-        btnShowIncomes.setOnAction(e -> showIncomes());
+        btnShowIncomes.setOnAction(e -> mainController.showIncomes());
 
         Button btnShowExpenses = new Button("Show Expenses");
-        btnShowExpenses.setOnAction(e -> showExpenses());
+        btnShowExpenses.setOnAction(e -> mainController.showExpenses());
 
         Button btnDeleteIncome = new Button("Delete Income");
-        btnDeleteIncome.setOnAction(e -> deleteIncome());
+        btnDeleteIncome.setOnAction(e -> mainController.deleteIncome(this::updateLabels));
 
         Button btnDeleteExpense = new Button("Delete Expense");
-        btnDeleteExpense.setOnAction(e -> deleteExpense());
+        btnDeleteExpense.setOnAction(e -> mainController.deleteExpense(this::updateLabels));
 
         Button btnSetGoal = new Button("Set Goal");
-        btnSetGoal.setOnAction(e -> setGoal());
+        btnSetGoal.setOnAction(e -> mainController.setGoal(this::updateLabels));
 
-        Button btnShowIncomeChart = new Button("Show Income Chart");
-        btnShowIncomeChart.setOnAction(e -> showIncomeChart());
-
-        Button btnShowExpenseChart = new Button("Show Expense Chart");
-        btnShowExpenseChart.setOnAction(e -> showExpenseChart());
+        Button btnShowPieChart = new Button("Show Pie Charts");
+        btnShowPieChart.setOnAction(e -> mainController.showPieChart());
 
         Button btnSelectUser = new Button("Select User");
         btnSelectUser.setOnAction(e -> selectUser());
@@ -99,8 +97,7 @@ public class MainFX extends Application {
                 btnDeleteIncome,
                 btnDeleteExpense,
                 btnSetGoal,
-                btnShowIncomeChart,
-                btnShowExpenseChart
+                btnShowPieChart
         );
         userPanel.setVisible(false);
 
@@ -227,256 +224,10 @@ public class MainFX extends Application {
     private void finalizeLogin(String username) {
         userPanel.setVisible(true);
         lblWelcomeMessage.setText("Welcome back, " + currentUser.getName() + "!");
+        mainController.setCurrentUser(currentUser);
         updateLabels();
     }
 
-    private void addIncome() {
-        if (currentUser == null) return;
-
-        Dialog<String[]> dialog = new Dialog<>();
-        dialog.setTitle("Add Income");
-        dialog.setHeaderText("Enter income details:");
-
-        Label lblAmount = new Label("Amount:");
-        TextField txtAmount = new TextField();
-
-        Label lblDescription = new Label("Description:");
-        TextField txtDescription = new TextField();
-
-        Label lblDate = new Label("Date:");
-        TextField txtDate = new TextField(java.time.LocalDate.now().toString());
-
-        Label lblCategory = new Label("Category:");
-        ComboBox<String> cmbCategory = new ComboBox<>();
-        cmbCategory.getItems().addAll(Income.getCategories());
-        cmbCategory.getSelectionModel().selectFirst();
-
-        GridPane grid = new GridPane();
-        grid.setHgap(10);
-        grid.setVgap(10);
-        grid.setPadding(new Insets(20));
-        grid.add(lblAmount, 0, 0); grid.add(txtAmount, 1, 0);
-        grid.add(lblDescription, 0, 1); grid.add(txtDescription, 1, 1);
-        grid.add(lblDate, 0, 2); grid.add(txtDate, 1, 2);
-        grid.add(lblCategory, 0, 3); grid.add(cmbCategory, 1, 3);
-
-        dialog.getDialogPane().setContent(grid);
-        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
-
-        dialog.setResultConverter(button -> {
-            if (button == ButtonType.OK) {
-                return new String[]{
-                        txtAmount.getText().trim(),
-                        txtDescription.getText().trim(),
-                        txtDate.getText().trim(),
-                        cmbCategory.getValue()
-                };
-            }
-            return null;
-        });
-
-        dialog.showAndWait().ifPresent(result -> {
-            try {
-                double amount = Double.parseDouble(result[0]);
-                String description = result[1];
-                String date = result[2];
-                String category = result[3];
-
-                currentUser.addIncome(category, amount, description, date);
-                logic.saveUsers();
-                updateLabels();
-            } catch (NumberFormatException e) {
-                UIUtils.showAlert("Invalid Input", "Please enter a valid number for the amount.");
-            }
-        });
-    }
-
-    private void addExpense() {
-        if (currentUser == null) return;
-
-        Dialog<String[]> dialog = new Dialog<>();
-        dialog.setTitle("Add Expense");
-        dialog.setHeaderText("Enter expense details:");
-
-        Label lblAmount = new Label("Amount:");
-        TextField txtAmount = new TextField();
-
-        Label lblDescription = new Label("Description:");
-        TextField txtDescription = new TextField();
-
-        Label lblDate = new Label("Date:");
-        TextField txtDate = new TextField(java.time.LocalDate.now().toString());
-
-        Label lblCategory = new Label("Category:");
-        ComboBox<String> cmbCategory = new ComboBox<>();
-        cmbCategory.getItems().addAll(Expense.getCategories()); // Make sure this is static
-        cmbCategory.getSelectionModel().selectFirst();
-
-        GridPane grid = new GridPane();
-        grid.setHgap(10);
-        grid.setVgap(10);
-        grid.setPadding(new Insets(20));
-        grid.add(lblAmount, 0, 0); grid.add(txtAmount, 1, 0);
-        grid.add(lblDescription, 0, 1); grid.add(txtDescription, 1, 1);
-        grid.add(lblDate, 0, 2); grid.add(txtDate, 1, 2);
-        grid.add(lblCategory, 0, 3); grid.add(cmbCategory, 1, 3);
-
-        dialog.getDialogPane().setContent(grid);
-        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
-
-        dialog.setResultConverter(button -> {
-            if (button == ButtonType.OK) {
-                return new String[]{
-                        txtAmount.getText().trim(),
-                        txtDescription.getText().trim(),
-                        txtDate.getText().trim(),
-                        cmbCategory.getValue()
-                };
-            }
-            return null;
-        });
-
-        dialog.showAndWait().ifPresent(result -> {
-            try {
-                double amount = Double.parseDouble(result[0]);
-                String description = result[1];
-                String date = result[2];
-                String category = result[3];
-
-                currentUser.addExpense(category, amount, description, date);
-                logic.saveUsers();
-                updateLabels();
-            }
-            catch (NumberFormatException e) {
-                UIUtils.showAlert("Invalid Input", "Please enter a valid number for the amount.");
-            }
-        });
-    }
-
-    private void deleteIncome() {
-        if (currentUser == null) return;
-
-        List<Income> incomes = currentUser.getIncomes();
-        if (incomes.isEmpty()) {
-            UIUtils.showAlert("No Incomes", "There are no incomes to delete.");
-            return;
-        }
-
-        List<String> descriptions = incomes.stream()
-                .map(Income::getDescription)
-                .toList();
-
-        ChoiceDialog<String> dialog = new ChoiceDialog<>(descriptions.get(0), descriptions);
-        dialog.setTitle("Delete Income");
-        dialog.setHeaderText("Select an income description to delete:");
-        dialog.setContentText("Description:");
-
-        dialog.showAndWait().ifPresent(selectedDesc -> {
-            boolean removed = currentUser.removeIncome(selectedDesc);
-            if (removed) {
-                UIUtils.showAlert("Success", "Income removed successfully.");
-                logic.saveUsers();
-                updateLabels();
-            }
-            else {
-                UIUtils.showAlert("Not Found", "Could not find matching income.");
-            }
-        });
-    }
-
-    private void deleteExpense() {
-        if (currentUser == null) return;
-
-        List<Expense> expenses = currentUser.getExpenses();
-        if (expenses.isEmpty()) {
-            UIUtils.showAlert("No Expenses", "There are no expenses to delete.");
-            return;
-        }
-
-        List<String> descriptions = expenses.stream()
-                .map(Expense::getDescription)
-                .toList();
-
-        ChoiceDialog<String> dialog = new ChoiceDialog<>(descriptions.get(0), descriptions);
-        dialog.setTitle("Delete Expense");
-        dialog.setHeaderText("Select an expense description to delete:");
-        dialog.setContentText("Description:");
-
-        dialog.showAndWait().ifPresent(selectedDesc -> {
-            boolean removed = currentUser.removeExpense(selectedDesc);
-            if (removed) {
-                UIUtils.showAlert("Success", "Expense removed successfully.");
-                logic.saveUsers();
-                updateLabels();
-            }
-            else {
-                UIUtils.showAlert("Not Found", "Could not find matching expense.");
-            }
-        });
-    }
-
-    private void setGoal() {
-        if (currentUser == null) return;
-        TextInputDialog dialog = new TextInputDialog();
-        dialog.setTitle("Set Saving Goal");
-        dialog.setHeaderText("Enter new saving goal:");
-        dialog.setContentText("Goal:");
-        dialog.showAndWait().ifPresent(input -> {
-            currentUser.setSavingGoal(Double.parseDouble(input));
-            logic.saveUsers();
-            updateLabels();
-        });
-    }
-
-    private void showIncomes() {
-        if (currentUser == null) return;
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Incomes");
-        alert.setHeaderText("List of incomes:");
-        StringBuilder sb = new StringBuilder();
-        for (Income i : currentUser.getIncomes()) {
-            sb.append(i.getCategory()).append(" - ").append(i.getAmount()).append(" - ").append(i.getDescription()).append("\n");
-        }
-        alert.setContentText(sb.toString());
-        alert.showAndWait();
-    }
-
-    private void showExpenses() {
-        if (currentUser == null) return;
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Expenses");
-        alert.setHeaderText("List of expenses:");
-        StringBuilder sb = new StringBuilder();
-        for (Expense e : currentUser.getExpenses()) {
-            sb.append(e.getCategory()).append(" - ").append(e.getAmount()).append(" - ").append(e.getDescription()).append("\n");
-        }
-        alert.setContentText(sb.toString());
-        alert.showAndWait();
-    }
-
-    private void showIncomeChart() {
-        if (currentUser == null) return;
-        MonthData data = currentUser.getCurrentMonthData();
-        if (data == null || data.getIncomes().isEmpty()) {
-            UIUtils.showAlert("No Incomes", "No incomes available for this month.");
-            return;
-        }
-
-        PieChart chart = PieChartGenerator.generateIncomeChart(data);
-        showChartInWindow(chart, "Income Distribution");
-    }
-
-    private void showExpenseChart() {
-        if (currentUser == null) return;
-        MonthData data = currentUser.getCurrentMonthData();
-        if (data == null || data.getExpenses().isEmpty()) {
-            UIUtils.showAlert("No Expenses", "No expenses available for this month.");
-            return;
-        }
-
-        PieChart chart = PieChartGenerator.generateExpenseChart(data);
-        showChartInWindow(chart, "Expense Distribution");
-    }
 
     private void updateLabels() {
         MonthData data = currentUser.getCurrentMonthData();
@@ -492,16 +243,5 @@ public class MainFX extends Application {
         lblSavingGoal.setText("Saving goal: " + UIUtils.formatCurrency(savingGoal, currency));
         double remainingBalance = Math.max(0, currentBalance - savingGoal);
         lblMoneyRemaining.setText("Money remaining: " + UIUtils.formatCurrency(remainingBalance, currency));
-    }
-
-    private void showChartInWindow(PieChart chart, String title) {
-        Stage chartStage = new Stage();
-        chartStage.setTitle(title);
-
-        VBox vbox = new VBox(chart);
-        vbox.setPadding(new Insets(10));
-        Scene scene = new Scene(vbox, 500, 400);
-        chartStage.setScene(scene);
-        chartStage.show();
     }
 }

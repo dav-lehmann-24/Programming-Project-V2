@@ -3,7 +3,7 @@ package dhbw.mosbach;
 import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
 import javafx.geometry.Insets;
-
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -147,5 +147,73 @@ public class DialogHelper {
 
         dialog.setResultConverter(button -> button);
         return dialog.showAndWait();
+    }
+
+    private static Optional<String[]> showAddTransactionDialog(String title, String header, List<String> categories) {
+        Dialog<String[]> dialog = new Dialog<>();
+        dialog.setTitle(title);
+        dialog.setHeaderText(header);
+
+        ComboBox<String> cbCategory = new ComboBox<>();
+        cbCategory.getItems().addAll(categories);
+        TextField txtAmount = new TextField();
+        TextField txtDescription = new TextField();
+        TextField txtDate = new TextField(LocalDate.now().toString());
+
+        GridPane grid = new GridPane();
+        grid.setVgap(10); grid.setHgap(10);
+        grid.add(new Label("Category:"), 0, 0); grid.add(cbCategory, 1, 0);
+        grid.add(new Label("Amount:"), 0, 1); grid.add(txtAmount, 1, 1);
+        grid.add(new Label("Description:"), 0, 2); grid.add(txtDescription, 1, 2);
+        grid.add(new Label("Date:"), 0, 3); grid.add(txtDate, 1, 3);
+
+        dialog.getDialogPane().setContent(grid);
+        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+
+        dialog.setResultConverter(button -> {
+            if (button == ButtonType.OK) {
+                return new String[]{ cbCategory.getValue(), txtAmount.getText(), txtDescription.getText(), txtDate.getText() };
+            }
+            return null;
+        });
+
+        return dialog.showAndWait();
+    }
+
+    public static Optional<String[]> showAddIncomeDialog() {
+        return showAddTransactionDialog("Add Income", "Enter income details:", new Income(0, "", "", "").getCategories());
+    }
+
+    public static Optional<String[]> showAddExpenseDialog() {
+        return showAddTransactionDialog("Add Expense", "Enter expense details:", new Expense(0, "", "", "").getCategories());
+    }
+
+    private static <T> Optional<T> showDeleteDialog(List<T> items, String title, String header) {
+        ChoiceDialog<T> dialog = new ChoiceDialog<>(items.isEmpty() ? null : items.get(0), items);
+        dialog.setTitle(title);
+        dialog.setHeaderText(header);
+        return dialog.showAndWait();
+    }
+
+    public static Optional<Income> showDeleteIncomeDialog(List<Income> incomes) {
+        return showDeleteDialog(incomes, "Delete Income", "Select income to delete:");
+    }
+
+    public static Optional<Expense> showDeleteExpenseDialog(List<Expense> expenses) {
+        return showDeleteDialog(expenses, "Delete Expense", "Select expense to delete:");
+    }
+
+    public static Optional<Double> showSetGoalDialog() {
+        TextInputDialog dialog = new TextInputDialog();
+        dialog.setTitle("Set Saving Goal");
+        dialog.setHeaderText("Enter your new saving goal:");
+        Optional<String> result = dialog.showAndWait();
+        try {
+            return result.map(Double::parseDouble);
+        }
+        catch (NumberFormatException e) {
+            UIUtils.showAlert("Invalid Input", "Please enter a valid number.");
+            return Optional.empty();
+        }
     }
 }

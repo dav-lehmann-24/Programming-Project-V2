@@ -22,10 +22,6 @@ public class MonthData {
         this.expenses = new ArrayList<>();
     }
 
-    public String getMonthName() {
-        return monthName;
-    }
-
     public double getStartingBalance() {
         return startingBalance;
     }
@@ -64,13 +60,5 @@ public class MonthData {
 
     public List<Expense> getExpenses() {
         return expenses;
-    }
-
-    public double getTotalIncome() {
-        return incomes.stream().mapToDouble(Income::getAmount).sum();
-    }
-
-    public double getTotalExpense() {
-        return expenses.stream().mapToDouble(Expense::getAmount).sum();
     }
 }

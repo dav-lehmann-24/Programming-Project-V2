@@ -9,7 +9,7 @@ import at.favre.lib.crypto.bcrypt.BCrypt;
 
 public class User {
     // Attributes of a user
-    String name;
+    private String name;
     private String passwordHash;
     private Map<String, MonthData> monthDataMap;
     private String currentMonth;
@@ -24,40 +24,12 @@ public class User {
 
     // Adds an expense and subtracts it from the current balance
     public void addExpense(String category, double amount, String description, String date) {
-        MonthData data = getCurrentMonthData();
-        if (data != null) {
-            data.addExpense(new Expense(amount, description, category, date));
-            data.setCurrentBalance(data.getCurrentBalance() - amount);
-        }
-    }
-
-    // Sets a saving goal for a user
-    public void setSavingGoal(double goal) {
-        getCurrentMonthData().setSavingGoal(goal);
-    }
-
-    // Removes an expense according to the description if there is any
-    public boolean removeExpense(String description) {
-        MonthData data = getCurrentMonthData();
-        if (data != null) {
-            for (Expense e : new ArrayList<>(data.getExpenses())) {
-                if (e.getDescription().equalsIgnoreCase(description)) {
-                    data.getExpenses().remove(e);
-                    data.setCurrentBalance(data.getCurrentBalance() + e.getAmount());
-                    return true;
-                }
-            }
-        }
-        return false;
+        addTransaction(Expense.class, category, amount, description, date);
     }
 
     // Returns list of expenses of a user
     public List<Expense> getExpenses() {
-        MonthData data = getCurrentMonthData();
-        if (data != null) {
-            return data.getExpenses();
-        }
-        return new ArrayList<>();
+        return getTransactions(Expense.class);
     }
 
     // Returns name of the user
@@ -65,68 +37,14 @@ public class User {
         return name;
     }
 
-    // Setting the current balance
-    public void setCurrentBalance(double currentBalance) {
-        MonthData data = getCurrentMonthData();
-        if (data != null) {
-            data.setCurrentBalance(currentBalance);
-        }
-    }
-
-    // Returns the current balance
-    public double getCurrentBalance() {
-        return getCurrentMonthData().getCurrentBalance();
-    }
-
-    // Calculate the sum of all expenses of the user
-    public double getTotalExpenses() {
-        MonthData data = getCurrentMonthData();
-        if (data != null) {
-            return data.getTotalExpense();
-        }
-        return 0.0;
-    }
-
     // Return the list of incomes of a user
     public List<Income> getIncomes() {
-        MonthData data = getCurrentMonthData();
-        if (data != null) {
-            return data.getIncomes();
-        }
-        return new ArrayList<>();
+        return getTransactions(Income.class);
     }
 
     // Adds an income and adds it to the current balance
     public void addIncome(String category, double amount, String description, String date) {
-        MonthData data = getCurrentMonthData();
-        if (data != null) {
-            data.addIncome(new Income(amount, description, category, date));
-            data.setCurrentBalance(data.getCurrentBalance() + amount);
-        }
-    }
-
-    // Removes an income according to the description if there is any
-    public boolean removeIncome(String description) {
-        MonthData data = getCurrentMonthData();
-        if (data != null) {
-            for (Income i : new ArrayList<>(data.getIncomes())) {
-                if (i.getDescription().equalsIgnoreCase(description)) {
-                    data.getIncomes().remove(i);
-                    data.setCurrentBalance(data.getCurrentBalance() - i.getAmount());
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    // Calculate the sum of all incomes of the user
-    public double getTotalIncome() {
-        MonthData data = getCurrentMonthData();
-        if (data != null) {
-            return data.getTotalIncome();
-        }
-        return 0.0;
+        addTransaction(Income.class, category, amount, description, date);
     }
 
     // Check if the password is correct
@@ -143,15 +61,6 @@ public class User {
         return currentMonth != null ? monthDataMap.get(currentMonth) : null;
     }
 
-    public String getCurrency() {
-        MonthData data = getCurrentMonthData();
-        return (data != null) ? data.getCurrency() : "";
-    }
-
-    public String getCurrentMonth() {
-        return currentMonth;
-    }
-
     public Map<String, MonthData> getMonthDataMap() {
         return monthDataMap;
     }
@@ -160,5 +69,58 @@ public class User {
         if (monthDataMap.containsKey(monthName)) {
             this.currentMonth = monthName;
         }
+    }
+
+    public <T extends Transaction> void addTransaction(Class<T> clazz, String category, double amount, String description, String date) {
+        MonthData data = getCurrentMonthData();
+        if (data != null) {
+            if (clazz == Income.class) {
+                data.addIncome(new Income(amount, description, category, date));
+                data.setCurrentBalance(data.getCurrentBalance() + amount);
+            }
+            else if (clazz == Expense.class) {
+                data.addExpense(new Expense(amount, description, category, date));
+                data.setCurrentBalance(data.getCurrentBalance() - amount);
+            }
+        }
+    }
+
+    public <T extends Transaction> boolean removeTransaction(Class<T> clazz, String description) {
+        MonthData data = getCurrentMonthData();
+        if (data != null) {
+            if (clazz == Income.class) {
+                for (Income i : new ArrayList<>(data.getIncomes())) {
+                    if (i.getDescription().equalsIgnoreCase(description)) {
+                        data.getIncomes().remove(i);
+                        data.setCurrentBalance(data.getCurrentBalance() - i.getAmount());
+                        return true;
+                    }
+                }
+            }
+            else if (clazz == Expense.class) {
+                for (Expense e : new ArrayList<>(data.getExpenses())) {
+                    if (e.getDescription().equalsIgnoreCase(description)) {
+                        data.getExpenses().remove(e);
+                        data.setCurrentBalance(data.getCurrentBalance() + e.getAmount());
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T extends Transaction> List<T> getTransactions(Class<T> clazz) {
+        MonthData data = getCurrentMonthData();
+        if (data != null) {
+            if (clazz == Income.class) {
+                return (List<T>) data.getIncomes();
+            }
+            else if (clazz == Expense.class) {
+                return (List<T>) data.getExpenses();
+            }
+        }
+        return new ArrayList<>();
     }
 }

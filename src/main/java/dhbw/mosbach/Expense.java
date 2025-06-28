@@ -9,7 +9,13 @@ public class Expense extends Transaction {
         super(amount, description, category, date);
     }
 
-    public static List<String> getCategories() {
+    @Override
+    public List<String> getCategories() {
         return EXPENSE_TYPES;
+    }
+
+    @Override
+    public String toString() {
+        return getCategory() + " - " + getAmount() + " - " + getDescription();
     }
 }
