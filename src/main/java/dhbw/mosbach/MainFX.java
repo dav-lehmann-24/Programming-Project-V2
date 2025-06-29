@@ -40,12 +40,15 @@ public class MainFX extends Application {
 
         Label lblTitle = new Label("Welcome to CashCompass!");
         lblTitle.setStyle("-fx-text-fill: red; -fx-font-size: 36; -fx-font-weight: bold;");
+        lblTitle.setMaxWidth(Double.MAX_VALUE);
+        lblTitle.setAlignment(javafx.geometry.Pos.CENTER);
+        VBox.setVgrow(lblTitle, Priority.NEVER);
 
         lblWelcomeMessage = new Label("");
-        lblWelcomeMessage.setStyle("-fx-text-fill: green; -fx-font-size: 18; -fx-font-weight: bold;");
+        lblWelcomeMessage.setStyle("-fx-text-fill: green; -fx-font-size: 22; -fx-font-weight: bold;");
 
         lblCurrentMonth = new Label("");
-        lblCurrentMonth.setStyle("-fx-text-fill: black; -fx-font-size: 16; -fx-font-weight: bold;");
+        lblCurrentMonth.setStyle("-fx-text-fill: black; -fx-font-size: 20; -fx-font-weight: bold;");
 
         lblCurrentBalance = new Label("Current balance: -");
         lblSavingGoal = new Label("Saving goal: -");
@@ -81,30 +84,65 @@ public class MainFX extends Application {
 
         Button btnCreateUser = new Button("Create User");
         btnCreateUser.setOnAction(e -> createUser());
+        
+        VBox infoPanel = new VBox(10);
+        infoPanel.setPadding(new Insets(20, 0, 20, 40));
+        infoPanel.setStyle("-fx-background-color: transparent;");
+        lblWelcomeMessage.setStyle("-fx-text-fill: green; -fx-font-size: 22; -fx-font-weight: bold;");
+        lblCurrentMonth.setStyle("-fx-text-fill: black; -fx-font-size: 20; -fx-font-weight: bold;");
+        lblStartingBalance.setStyle("-fx-font-size: 18; -fx-font-weight: bold;");
+        lblCurrentBalance.setStyle("-fx-font-size: 18; -fx-font-weight: bold;");
+        lblSavingGoal.setStyle("-fx-font-size: 18; -fx-font-weight: bold;");
+        lblMoneyRemaining.setStyle("-fx-font-size: 18; -fx-font-weight: bold;");
+        infoPanel.getChildren().addAll(
+            lblWelcomeMessage,
+            lblCurrentMonth,
+            lblStartingBalance,
+            lblCurrentBalance,
+            lblSavingGoal,
+            lblMoneyRemaining
+        );
+
+        btnAddIncome.setStyle("-fx-font-size: 16; -fx-pref-width: 200px; -fx-pref-height: 40px;");
+        btnAddExpense.setStyle("-fx-font-size: 16; -fx-pref-width: 200px; -fx-pref-height: 40px;");
+        btnShowIncomes.setStyle("-fx-font-size: 16; -fx-pref-width: 200px; -fx-pref-height: 40px;");
+        btnShowExpenses.setStyle("-fx-font-size: 16; -fx-pref-width: 200px; -fx-pref-height: 40px;");
+        btnDeleteIncome.setStyle("-fx-font-size: 16; -fx-pref-width: 200px; -fx-pref-height: 40px;");
+        btnDeleteExpense.setStyle("-fx-font-size: 16; -fx-pref-width: 200px; -fx-pref-height: 40px;");
+        btnSetGoal.setStyle("-fx-font-size: 16; -fx-pref-width: 200px; -fx-pref-height: 40px;");
+        btnShowPieChart.setStyle("-fx-font-size: 16; -fx-pref-width: 200px; -fx-pref-height: 40px;");
+        btnCreateUser.setStyle("-fx-font-size: 16; -fx-pref-width: 220px; -fx-pref-height: 45px;");
+        btnSelectUser.setStyle("-fx-font-size: 16; -fx-pref-width: 220px; -fx-pref-height: 45px;");
+
+        HBox userSelectBox = new HBox(20, btnCreateUser, btnSelectUser);
+        userSelectBox.setPadding(new Insets(10, 0, 30, 0));
+        userSelectBox.setAlignment(javafx.geometry.Pos.CENTER);
+
+        VBox addBox = new VBox(10, btnAddIncome, btnAddExpense);
+        addBox.setPadding(new Insets(0,0,10,0));
+        addBox.setStyle("-fx-border-color: #cccccc; -fx-border-width: 0 0 1 0;");
+        VBox showBox = new VBox(10, btnShowIncomes, btnShowExpenses);
+        showBox.setPadding(new Insets(0,0,10,0));
+        showBox.setStyle("-fx-border-color: #cccccc; -fx-border-width: 0 0 1 0;");
+        VBox deleteBox = new VBox(10, btnDeleteIncome, btnDeleteExpense);
+        deleteBox.setPadding(new Insets(0,0,10,0));
+        deleteBox.setStyle("-fx-border-color: #cccccc; -fx-border-width: 0 0 1 0;");
+        VBox miscBox = new VBox(10, btnSetGoal, btnShowPieChart);
+
+        VBox buttonPanel = new VBox(20, addBox, showBox, deleteBox, miscBox);
+        buttonPanel.setPadding(new Insets(20, 40, 20, 0));
+        buttonPanel.setStyle("-fx-background-color: transparent;");
+
+        HBox userContent = new HBox(40);
+        userContent.getChildren().addAll(buttonPanel, infoPanel);
 
         userPanel = new VBox(10);
-        userPanel.getChildren().addAll(
-                lblWelcomeMessage,
-                lblCurrentMonth,
-                lblStartingBalance,
-                lblCurrentBalance,
-                lblSavingGoal,
-                lblMoneyRemaining,
-                btnAddIncome,
-                btnAddExpense,
-                btnShowIncomes,
-                btnShowExpenses,
-                btnDeleteIncome,
-                btnDeleteExpense,
-                btnSetGoal,
-                btnShowPieChart
-        );
+        userPanel.getChildren().addAll(userContent);
         userPanel.setVisible(false);
 
-        root.getChildren().addAll(
+        root.getChildren().setAll(
                 lblTitle,
-                btnCreateUser,
-                btnSelectUser,
+                userSelectBox,
                 userPanel
         );
 
