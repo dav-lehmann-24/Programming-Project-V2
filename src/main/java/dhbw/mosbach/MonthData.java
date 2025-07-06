@@ -61,4 +61,8 @@ public class MonthData {
     public List<Expense> getExpenses() {
         return expenses;
     }
+
+    public String getMonthName() {
+        return monthName;
+    }
 }

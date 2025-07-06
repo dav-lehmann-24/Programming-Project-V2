@@ -1,69 +1,116 @@
 package dhbw.mosbach;
 
-// Import libraries
-import java.util.Map;
-import java.util.HashMap;
-import java.lang.reflect.Type;
-import java.io.IOException;
-import java.io.FileWriter;
-import java.io.FileReader;
-import com.google.gson.reflect.TypeToken;
-import com.google.gson.GsonBuilder;
-import com.google.gson.Gson;
+import java.sql.*;
+import at.favre.lib.crypto.bcrypt.BCrypt;
 
 public class UserLogic {
-    private static final String FILE_PATH = "users.json"; // File path to store user data
-    private Map<String, User> users; // Map for managing the user according to their names
-    private Gson gson; // Gson object to convert between JSON and Java objects
-
-    // Initialize the Gson object and load user data from the file
     public UserLogic() {
-        gson = new GsonBuilder().setPrettyPrinting().create();
-        users = loadUsers();
+
     }
 
-    // Load users from the JSON file and store it in a map. If there is no file or the file is incorrect, an empty map will return
-    private Map<String, User> loadUsers() {
-        try (FileReader reader = new FileReader(FILE_PATH)) {
-            Type type = new TypeToken<Map<String, User>>() {}.getType();
-            Map<String, User> loadedUsers = gson.fromJson(reader, type);
-            return (loadedUsers != null) ? loadedUsers : new HashMap<>();
+    public void addUser(String name, String password) {
+        String passwordHash = BCrypt.withDefaults().hashToString(12, password.toCharArray());
+        try (Connection conn = Database.getConnection()) {
+            String sql = "INSERT INTO users (name, password_hash) VALUES (?, ?) ON CONFLICT (name) DO NOTHING";
+            try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+                stmt.setString(1, name);
+                stmt.setString(2, passwordHash);
+                stmt.executeUpdate();
+            }
         }
-        catch (IOException e) {
-            return new HashMap<>();
-        }
-    }
-
-    // Save the current user map in a JSON file
-    public void saveUsers() {
-        try (FileWriter writer = new FileWriter(FILE_PATH)) {
-            gson.toJson(users, writer);
-        }
-        catch (IOException e) {
+        catch (SQLException e) {
             e.printStackTrace();
         }
     }
 
-    // Adds a new user if he doesn't already exist
-    public void addUser(String name, String password) {
-        if (!users.containsKey(name)) {
-            users.put(name, new User(name, password));
-            saveUsers();
-        }
-    }
-
-    // Return the user according to the name
     public User getUser(String name) {
-        return users.get(name);
+        try (Connection conn = Database.getConnection()) {
+            String sql = "SELECT id, name, password_hash FROM users WHERE name = ?";
+            try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+                stmt.setString(1, name);
+                try (ResultSet rs = stmt.executeQuery()) {
+                    if (rs.next()) {
+                        int userId = rs.getInt("id");
+                        String passwordHash = rs.getString("password_hash");
+                        User user = new User(name, passwordHash, true); // true = already hashed
+                        loadMonthsForUser(user, userId, conn);
+                        return user;
+                    }
+                }
+            }
+        }
+        catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
-    // Deletes a user of the map and saves the change
     public boolean deleteUser(String name) {
-        if (users.containsKey(name)) {
-            users.remove(name);
-            saveUsers();
-            return true;
+        try (Connection conn = Database.getConnection()) {
+            String sql = "DELETE FROM users WHERE name = ?";
+            try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+                stmt.setString(1, name);
+                int affected = stmt.executeUpdate();
+                return affected > 0;
+            }
+        }
+        catch (SQLException e) {
+            e.printStackTrace();
         }
         return false;
+    }
+
+    private void loadMonthsForUser(User user, int userId, Connection conn) throws SQLException {
+        String sql = "SELECT * FROM months WHERE user_id = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, userId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    String monthName = rs.getString("name");
+                    double startingBalance = rs.getDouble("starting_balance");
+                    double currentBalance = rs.getDouble("current_balance");
+                    String currency = rs.getString("currency");
+                    double savingGoal = rs.getDouble("saving_goal");
+                    int monthId = rs.getInt("id");
+                    MonthData month = new MonthData(monthName, startingBalance, currency, savingGoal);
+                    month.setCurrentBalance(currentBalance);
+                    loadIncomesForMonth(month, monthId, conn);
+                    loadExpensesForMonth(month, monthId, conn);
+                    user.getMonthDataMap().put(monthName, month);
+                }
+            }
+        }
+    }
+
+    private void loadIncomesForMonth(MonthData month, int monthId, Connection conn) throws SQLException {
+        String sql = "SELECT * FROM incomes WHERE month_id = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, monthId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    double amount = rs.getDouble("amount");
+                    String description = rs.getString("description");
+                    String category = rs.getString("category");
+                    String date = rs.getDate("date").toString();
+                    month.addIncome(new Income(amount, description, category, date));
+                }
+            }
+        }
+    }
+
+    private void loadExpensesForMonth(MonthData month, int monthId, Connection conn) throws SQLException {
+        String sql = "SELECT * FROM expenses WHERE month_id = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, monthId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    double amount = rs.getDouble("amount");
+                    String description = rs.getString("description");
+                    String category = rs.getString("category");
+                    String date = rs.getDate("date").toString();
+                    month.addExpense(new Expense(amount, description, category, date));
+                }
+            }
+        }
     }
 }

@@ -216,4 +216,45 @@ public class DialogHelper {
             return Optional.empty();
         }
     }
+
+    public static Optional<String[]> showDeleteUserDialog() {
+        Dialog<String[]> dialog = new Dialog<>();
+        dialog.setTitle("Delete User");
+        dialog.setHeaderText("Enter username and password to delete your account:");
+
+        Label lblUsername = new Label("Username:");
+        TextField txtUsername = new TextField();
+        Label lblPassword = new Label("Password:");
+        PasswordField txtPassword = new PasswordField();
+        Label lblConfirm = new Label("Confirm Password:");
+        PasswordField txtConfirm = new PasswordField();
+
+        GridPane grid = new GridPane();
+        grid.setHgap(10);
+        grid.setVgap(10);
+        grid.setPadding(new Insets(20, 150, 10, 10));
+        grid.add(lblUsername, 0, 0);
+        grid.add(txtUsername, 1, 0);
+        grid.add(lblPassword, 0, 1);
+        grid.add(txtPassword, 1, 1);
+        grid.add(lblConfirm, 0, 2);
+        grid.add(txtConfirm, 1, 2);
+
+        dialog.getDialogPane().setContent(grid);
+        ButtonType deleteButtonType = new ButtonType("Delete", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(deleteButtonType, ButtonType.CANCEL);
+
+        dialog.setResultConverter(button -> {
+            if (button == deleteButtonType) {
+                return new String[] {
+                        txtUsername.getText(),
+                        txtPassword.getText(),
+                        txtConfirm.getText()
+                };
+            }
+            return null;
+        });
+
+        return dialog.showAndWait();
+    }
 }

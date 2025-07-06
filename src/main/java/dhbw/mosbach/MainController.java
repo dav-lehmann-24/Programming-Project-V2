@@ -30,7 +30,6 @@ public class MainController {
                 String description = data[2];
                 String date = data[3];
                 currentUser.addIncome(category, amount, description, date);
-                logic.saveUsers();
                 updateLabels.run();
             }
             catch (NumberFormatException e) {
@@ -47,7 +46,6 @@ public class MainController {
                 String description = data[2];
                 String date = data[3];
                 currentUser.addExpense(category, amount, description, date);
-                logic.saveUsers();
                 updateLabels.run();
             }
             catch (NumberFormatException e) {
@@ -85,12 +83,7 @@ public class MainController {
             return;
         }
         DialogHelper.showDeleteIncomeDialog(incomes).ifPresent(income -> {
-            MonthData data = currentUser.getCurrentMonthData();
-            if (data != null) {
-                data.setCurrentBalance(data.getCurrentBalance() - income.getAmount());
-                data.getIncomes().remove(income);
-            }
-            logic.saveUsers();
+            currentUser.removeIncome(income.getDescription());
             updateLabels.run();
         });
     }
@@ -103,12 +96,7 @@ public class MainController {
             return;
         }
         DialogHelper.showDeleteExpenseDialog(expenses).ifPresent(expense -> {
-            MonthData data = currentUser.getCurrentMonthData();
-            if (data != null) {
-                data.setCurrentBalance(data.getCurrentBalance() + expense.getAmount());
-                data.getExpenses().remove(expense);
-            }
-            logic.saveUsers();
+            currentUser.removeExpense(expense.getDescription());
             updateLabels.run();
         });
     }
@@ -118,8 +106,7 @@ public class MainController {
         MonthData data = currentUser.getCurrentMonthData();
         if (data == null) return;
         DialogHelper.showSetGoalDialog().ifPresent(goal -> {
-            data.setSavingGoal(goal);
-            logic.saveUsers();
+            currentUser.setSavingGoal(goal);
             updateLabels.run();
         });
     }
