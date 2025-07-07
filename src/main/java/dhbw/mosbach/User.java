@@ -17,13 +17,6 @@ public class User {
     private Map<String, MonthData> monthDataMap;
     private String currentMonth;
 
-    public User(String name, String plainPassword) {
-        this.name = name;
-        this.passwordHash = BCrypt.withDefaults().hashToString(12, plainPassword.toCharArray());
-        this.monthDataMap = new HashMap<>();
-        this.currentMonth = null;
-    }
-
     public User(String name, String passwordHash, boolean alreadyHashed) {
         this.name = name;
         if (alreadyHashed) {

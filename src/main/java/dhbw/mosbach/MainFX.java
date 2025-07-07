@@ -253,7 +253,7 @@ public class MainFX extends Application {
                 }
                 DialogHelper.showChoiceDialog("Select Month", "Choose a month to continue planning:", "Months:", existingMonths)
                         .ifPresent(selectedMonth -> {
-                            currentUser.selectMonth(selectedMonth, 0, "", 0); // Werte werden nicht überschrieben
+                            currentUser.selectMonth(selectedMonth, 0, "", 0);
                             lblCurrentMonth.setText("Planning for: " + selectedMonth);
                             lblWelcomeMessage.setText("Welcome back, " + currentUser.getName() + "!");
                             updateLabels();
